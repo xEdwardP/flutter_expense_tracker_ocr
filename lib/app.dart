@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_expense_tracker_ocr/views/pages/home_page.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/login_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/theme/theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -9,10 +9,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Tracker OCR',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      home: HomePage(),
+      themeMode: ThemeMode.light,
+      home: LoginPage(),
     );
   }
 }

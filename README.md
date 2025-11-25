@@ -1,7 +1,7 @@
 # 🔥 Flutter Expense Tracker OCR 🔥
 
 Aplicación modular y escalable desarrollada en **Flutter 3**, diseñada para gestionar ingresos y gastos con precisión y eficiencia.  
-La app combina arquitectura **MVC + Services**, componentes reutilizables y una interfaz intuitiva, ofreciendo una experiencia fluida para usuarios que desean controlar sus finanzas personales.  
+La app ofrece una interfaz intuitiva, ofreciendo una experiencia fluida para usuarios que desean controlar sus finanzas personales.  
 Incluye integración con **Firebase** y reconocimiento de texto (**OCR con Google ML Kit**) para extraer automáticamente el monto de tickets fotografiados.
 
 ---
