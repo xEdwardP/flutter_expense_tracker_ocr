@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../views/pages/add_transaction_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
         // Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionListPage()));
         break;
       case 2:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage()));
+         Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage()));
         break;
       case 3:
         // Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()));
