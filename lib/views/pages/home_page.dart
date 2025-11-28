@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/transaction_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,13 +18,16 @@ class _HomePageState extends State<HomePage> {
 
     switch (index) {
       case 0:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const HomePage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
         break;
       case 1:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionListPage()));
+        Navigator.push(context,MaterialPageRoute(builder: (_) => TransactionsList()),);
         break;
       case 2:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage()));
+        //Navigator.push(context,MaterialPageRoute(builder: (_) => const AddTransactionPage()),);
         break;
       case 3:
         // Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()));
