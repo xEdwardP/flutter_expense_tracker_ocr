@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/login_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/theme/theme.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/profile_page.dart';
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -13,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      home: LoginPage(),
+      home: ProfileScreen(),
     );
   }
 }
