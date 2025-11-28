@@ -1,66 +1,239 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/transaction.dart'; 
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const HomePage()));
-        break;
-      case 1:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionListPage()));
-        break;
-      case 2:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage()));
-        break;
-      case 3:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()));
-        break;
-      case 4:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
-        break;
-    }
+  Stream<List<TransactionModel>> getTransactionsStream() {
+    return FirebaseFirestore.instance
+        .collection('transactions')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((d) => TransactionModel.fromMap(d.data(), d.id))
+            .toList());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Expense Tracker OCR")),
-      body: Center(
-        child: Text(
-          "Página seleccionada: $_selectedIndex",
-          style: const TextStyle(fontSize: 20),
+      appBar: AppBar(
+        title: const Text(
+          "Expense Tracker OCR",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: "Transacciones",
+
+      body: StreamBuilder<List<TransactionModel>>(
+        stream: getTransactionsStream(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final transactions = snapshot.data!;
+
+          final now = DateTime.now();
+
+          double totalIncome = transactions
+              .where((t) =>
+                  t.type == TransactionType.income &&
+                  t.date.month == now.month &&
+                  t.date.year == now.year)
+              .fold(0, (s, t) => s + t.amount);
+
+          double totalExpense = transactions
+              .where((t) =>
+                  t.type == TransactionType.expense &&
+                  t.date.month == now.month &&
+                  t.date.year == now.year)
+              .fold(0, (s, t) => s + t.amount);
+
+          final balance = totalIncome - totalExpense;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+        
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF6A5AE0),
+                        Color(0xFF8E7CF0),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 15,
+                        color: Colors.black26,
+                        offset: Offset(0, 5),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Balance del mes",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "\$${balance.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+              
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        label: "Ingresos",
+                        amount: totalIncome,
+                        color: Colors.green,
+                        icon: Icons.arrow_upward,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        label: "Gastos",
+                        amount: totalExpense,
+                        color: Colors.red,
+                        icon: Icons.arrow_downward,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+
+           
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Transacciones recientes",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                ...transactions
+                    .take(5)
+                    .map((t) => _buildTransactionItem(t))
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildStatCard({
+    required String label,
+    required double amount,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 30, color: color),
+          const SizedBox(height: 10),
+          Text(label, style: TextStyle(color: color, fontSize: 16)),
+          const SizedBox(height: 8),
+          Text(
+            "\$${amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt),
-            label: "Agregar",
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem(TransactionModel t) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            offset: const Offset(0, 4),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: t.type == TransactionType.income
+                ? Colors.green.withOpacity(0.2)
+                : Colors.red.withOpacity(0.2),
+            child: Icon(
+              t.type == TransactionType.income
+                  ? Icons.arrow_upward
+                  : Icons.arrow_downward,
+              color: t.type == TransactionType.income
+                  ? Colors.green
+                  : Colors.red,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              "${t.type == TransactionType.income ? "Ingreso" : "Gasto"} - ${t.categoryId}",
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          Text(
+            "\$${t.amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: t.type == TransactionType.income
+                  ? Colors.green
+                  : Colors.red,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          )
         ],
       ),
     );
