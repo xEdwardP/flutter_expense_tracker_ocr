@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -44,8 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      final doc =
-          await _firestore.collection('users').doc(user.uid).get();
+      final doc = await _firestore.collection('users').doc(user.uid).get();
 
       if (doc.exists) {
         final data = doc.data()!;
@@ -71,9 +69,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error cargando datos del usuario: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar el perfil')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar el perfil')));
       }
     } finally {
       if (mounted) {
@@ -100,10 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<String?> _uploadProfileImage(String uid) async {
     if (_imageFile == null) return _photoUrl;
 
-    final ref = _storage
-        .ref()
-        .child('user_profiles')
-        .child('$uid.jpg');
+    final ref = _storage.ref().child('user_profiles').child('$uid.jpg');
 
     final uploadTask = await ref.putFile(_imageFile!);
     final url = await uploadTask.ref.getDownloadURL();
@@ -144,9 +139,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error guardando perfil: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar los cambios')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al guardar los cambios')));
       }
     } finally {
       if (mounted) {
@@ -158,15 +153,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil de Usuario'),
-      ),
+      appBar: AppBar(title: const Text('Perfil de Usuario')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -181,8 +172,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundImage: _imageFile != null
                         ? FileImage(_imageFile!)
                         : (_photoUrl != null && _photoUrl!.isNotEmpty)
-                            ? NetworkImage(_photoUrl!) as ImageProvider
-                            : const AssetImage('assets/avatar_placeholder.png'),
+                        ? NetworkImage(_photoUrl!) as ImageProvider
+                        : const AssetImage('assets/avatar_placeholder.png'),
                   ),
                   Positioned(
                     bottom: 0,
@@ -258,9 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save),
-                  label: Text(_isSaving
-                      ? 'Guardando...'
-                      : 'Guardar cambios'),
+                  label: Text(_isSaving ? 'Guardando...' : 'Guardar cambios'),
                 ),
               ),
             ],
