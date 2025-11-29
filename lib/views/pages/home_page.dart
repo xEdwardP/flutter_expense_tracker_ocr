@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
     const ResumePage(),
     const TransactionsList(),
     const AddTransactionPage(),
-    const ProfileScreen(),
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
