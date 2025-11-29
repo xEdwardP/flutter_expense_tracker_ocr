@@ -1,29 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/transaction.dart'; 
+import '../../models/transaction.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class ResumePage extends StatelessWidget {
+  const ResumePage({super.key});
 
   Stream<List<TransactionModel>> getTransactionsStream() {
     return FirebaseFirestore.instance
         .collection('transactions')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((d) => TransactionModel.fromMap(d.data(), d.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((d) => TransactionModel.fromMap(d.data(), d.id))
+              .toList(),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Expense Tracker OCR",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.home, color: Colors.white),
+            const SizedBox(width: 10),
+            const Text(
+              "Inicio",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
 
       body: StreamBuilder<List<TransactionModel>>(
@@ -38,17 +45,21 @@ class HomePage extends StatelessWidget {
           final now = DateTime.now();
 
           double totalIncome = transactions
-              .where((t) =>
-                  t.type == TransactionType.income &&
-                  t.date.month == now.month &&
-                  t.date.year == now.year)
+              .where(
+                (t) =>
+                    t.type == TransactionType.income &&
+                    t.date.month == now.month &&
+                    t.date.year == now.year,
+              )
               .fold(0, (s, t) => s + t.amount);
 
           double totalExpense = transactions
-              .where((t) =>
-                  t.type == TransactionType.expense &&
-                  t.date.month == now.month &&
-                  t.date.year == now.year)
+              .where(
+                (t) =>
+                    t.type == TransactionType.expense &&
+                    t.date.month == now.month &&
+                    t.date.year == now.year,
+              )
               .fold(0, (s, t) => s + t.amount);
 
           final balance = totalIncome - totalExpense;
@@ -57,17 +68,13 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-        
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF6A5AE0),
-                        Color(0xFF8E7CF0),
-                      ],
+                      colors: [Color(0xFF6A5AE0), Color(0xFF8E7CF0)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -76,7 +83,7 @@ class HomePage extends StatelessWidget {
                         blurRadius: 15,
                         color: Colors.black26,
                         offset: Offset(0, 5),
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
@@ -84,10 +91,7 @@ class HomePage extends StatelessWidget {
                     children: [
                       const Text(
                         "Balance del mes",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -104,7 +108,6 @@ class HomePage extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-              
                 Row(
                   children: [
                     Expanded(
@@ -129,23 +132,17 @@ class HomePage extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-           
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Transacciones recientes",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
 
                 const SizedBox(height: 10),
 
-                ...transactions
-                    .take(5)
-                    .map((t) => _buildTransactionItem(t))
+                ...transactions.take(5).map((t) => _buildTransactionItem(t)),
               ],
             ),
           );
@@ -153,7 +150,6 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildStatCard({
     required String label,
@@ -233,7 +229,7 @@ class HomePage extends StatelessWidget {
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
-          )
+          ),
         ],
       ),
     );

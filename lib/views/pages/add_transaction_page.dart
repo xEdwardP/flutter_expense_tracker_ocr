@@ -40,7 +40,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
-  // Funcion
   Future<void> saveTransaction() async {
     if (titleCtrl.text.isEmpty || amountCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,9 +54,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
     String? imageURL;
     if (ticketImage != null) {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child("tickets/${DateTime.now().millisecondsSinceEpoch}.jpg");
+      final storageRef = FirebaseStorage.instance.ref().child(
+        "tickets/${DateTime.now().millisecondsSinceEpoch}.jpg",
+      );
       await storageRef.putFile(ticketImage!);
       imageURL = await storageRef.getDownloadURL();
     }
@@ -70,14 +69,15 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       "imageUrl": imageURL,
     });
 
-    // mensaje 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          "$transactionType registrado correctamente ✅",
+          "$transactionType registrado correctamente",
           style: const TextStyle(fontSize: 16),
         ),
-        backgroundColor: transactionType == "Gasto" ? Colors.green : Colors.green,
+        backgroundColor: transactionType == "Gasto"
+            ? Colors.green
+            : Colors.green,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
@@ -98,35 +98,63 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Agregar Transacción"),
-        backgroundColor: const Color.fromARGB(255, 85, 58, 202),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.camera_alt, color: Colors.white),
+            const SizedBox(width: 10),
+            const Text(
+              "Agregar",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Selector 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ChoiceChip(
-                  label: const Text("Gasto"),
+                  label: Row(
+                    children: [
+                      const Icon(
+                        Icons.arrow_upward,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 5),
+                      const Text("Gasto"),
+                    ],
+                  ),
                   selected: transactionType == "Gasto",
                   onSelected: (_) => setState(() => transactionType = "Gasto"),
                   selectedColor: const Color.fromARGB(255, 228, 220, 220),
                 ),
                 const SizedBox(width: 10),
                 ChoiceChip(
-                  label: const Text("Ingreso"),
+                  label: Row(
+                    children: [
+                      const Icon(
+                        Icons.arrow_downward,
+                        color: Colors.green,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 5),
+                      const Text("Ingreso"),
+                    ],
+                  ),
                   selected: transactionType == "Ingreso",
-                  onSelected: (_) => setState(() => transactionType = "Ingreso"),
+                  onSelected: (_) =>
+                      setState(() => transactionType = "Ingreso"),
                   selectedColor: const Color.fromARGB(255, 228, 220, 220),
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Contenedor 
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -145,7 +173,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   TextField(
                     controller: titleCtrl,
                     decoration: InputDecoration(
-                      labelText: "Descripción",
+                      prefixIcon: const Icon(Icons.note),
+                      labelText: "Nota",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -156,6 +185,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     controller: amountCtrl,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.monetization_on),
                       labelText: "Monto",
                       prefixText: "L. ",
                       border: OutlineInputBorder(
@@ -168,7 +198,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             ),
             const SizedBox(height: 20),
 
-            // Contenedor de foto
             GestureDetector(
               onTap: pickImage,
               child: Container(
@@ -180,15 +209,29 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
                 child: ticketImage == null
                     ? const Center(
-                        child: Text(
-                          "Toca para tomar foto del ticket",
-                          style: TextStyle(color: Colors.black54),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt,
+                              size: 30,
+                              color: Colors.black54,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              "Toca para tomar foto del ticket",
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ],
                         ),
                       )
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(15),
-                        child: Image.file(ticketImage!,
-                            fit: BoxFit.cover, width: double.infinity),
+                        child: Image.file(
+                          ticketImage!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
                       ),
               ),
             ),
@@ -198,8 +241,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
             const SizedBox(height: 20),
 
-            
-            ElevatedButton(
+            ElevatedButton.icon(
+              icon: const Icon(Icons.save),
+              label: const Text("Guardar Transacción"),
               onPressed: saveTransaction,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -207,10 +251,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: const Text(
-                "Guardar Transacción",
-                style: TextStyle(fontSize: 16),
               ),
             ),
           ],

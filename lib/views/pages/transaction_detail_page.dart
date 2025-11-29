@@ -15,14 +15,25 @@ class TransactionDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Detalle de Transacción"),
-        backgroundColor: Colors.deepPurple,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.list_alt, color: Colors.white),
+            const SizedBox(width: 10),
+            const Text(
+              "Detalle de Transacción",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Card(
           elevation: 5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -35,7 +46,9 @@ class TransactionDetailPage extends StatelessWidget {
                     Text(
                       "Monto: L. $amount",
                       style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -54,7 +67,12 @@ class TransactionDetailPage extends StatelessWidget {
                   children: [
                     const Icon(Icons.category, color: Colors.deepPurple),
                     const SizedBox(width: 10),
-                    Text(type == "income" ? "Tipo de Transaccion: Ingreso" : "Tipo de Transaccion: Gasto", style: const TextStyle(fontSize: 16)),
+                    Text(
+                      type == "income"
+                          ? "Tipo de Transaccion: Ingreso"
+                          : "Tipo de Transaccion: Gasto",
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -64,7 +82,12 @@ class TransactionDetailPage extends StatelessWidget {
                   children: [
                     const Icon(Icons.note, color: Colors.deepPurple),
                     const SizedBox(width: 10),
-                    Expanded(child: Text("Nota: $note", style: const TextStyle(fontSize: 16))),
+                    Expanded(
+                      child: Text(
+                        "Nota: $note",
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),

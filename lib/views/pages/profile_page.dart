@@ -27,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _email;
   String? _photoUrl;
 
-  File? _imageFile; // foto nueva tomada con la cámara
+  File? _imageFile;
 
   @override
   void initState() {
@@ -51,7 +51,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _phone = data['phone'] as String?;
         _photoUrl = data['photoUrl'] as String?;
       } else {
-        // Si no existe el documento, usamos datos de FirebaseAuth
         _name = user.displayName;
         _phone = '';
         _photoUrl = user.photoURL;
@@ -115,17 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // 1. Subir imagen si hay nueva
       final photoUrl = await _uploadProfileImage(user.uid);
 
-      // 2. Actualizar datos en Firestore
       await _firestore.collection('users').doc(user.uid).update({
         'name': _name ?? '',
         'phone': _phone ?? '',
         'photoUrl': photoUrl ?? '',
       });
 
-      // 3. También actualizar displayName y photoURL en Auth (opcional)
       await user.updateDisplayName(_name);
       if (photoUrl != null && photoUrl.isNotEmpty) {
         await user.updatePhotoURL(photoUrl);
@@ -157,14 +153,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil de Usuario')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person, color: Colors.white),
+            const SizedBox(width: 10),
+            const Text(
+              "Perfil",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              // FOTO DE PERFIL
               Stack(
                 children: [
                   CircleAvatar(
@@ -198,7 +205,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // NOMBRE
               TextFormField(
                 initialValue: _name ?? '',
                 decoration: const InputDecoration(
@@ -215,7 +221,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
 
-              // TELEFONO
               TextFormField(
                 initialValue: _phone ?? '',
                 decoration: const InputDecoration(
@@ -227,7 +232,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
 
-              // EMAIL (solo lectura)
               TextFormField(
                 initialValue: _email ?? '',
                 decoration: const InputDecoration(

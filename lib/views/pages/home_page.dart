@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/add_transaction_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/profile_page.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/resume_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/transaction_list_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,9 +15,9 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const Center(child: Text("Resumen Home")),
+    const ResumePage(),
     const TransactionsList(),
-    const Center(child: Text("Agregar transacción")),
+    const AddTransactionPage(),
     const ProfileScreen(),
   ];
 
@@ -28,7 +30,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: const Text("Expense Tracker OCR")),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

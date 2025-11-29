@@ -6,8 +6,9 @@ class OCRService {
     final textRecognizer = TextRecognizer();
 
     final inputImage = InputImage.fromFile(imageFile);
-    final RecognizedText recognizedText =
-        await textRecognizer.processImage(inputImage);
+    final RecognizedText recognizedText = await textRecognizer.processImage(
+      inputImage,
+    );
 
     // Buscar algo como 123.45 o L.456.00
     final regex = RegExp(r'(\d{2,4}\.\d{2})');
