@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primaryBlue = Color(0xFF5C6BC0);
+  static const Color primaryPurple = Colors.deepPurple;
   static const Color secondaryLavender = Color(0xFF9FA8DA);
   static const Color accentGray = Color(0xFFF5F5F5);
   static const Color darkGray = Color(0xFF424242);
@@ -11,9 +11,9 @@ class AppTheme {
   static ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
     scaffoldBackgroundColor: accentGray,
-    primaryColor: primaryBlue,
+    primaryColor: primaryPurple,
     colorScheme: ColorScheme.light(
-      primary: primaryBlue,
+      primary: primaryPurple,
       secondary: secondaryLavender,
       background: accentGray,
       onPrimary: Colors.white,
@@ -29,7 +29,7 @@ class AppTheme {
       bodyMedium: TextStyle(fontSize: 16, color: darkGray),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: primaryBlue,
+      backgroundColor: primaryPurple,
       foregroundColor: Colors.white,
       elevation: 0,
     ),
@@ -43,7 +43,7 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryBlue,
+        backgroundColor: primaryPurple,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -51,7 +51,7 @@ class AppTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: primaryBlue),
+        side: const BorderSide(color: primaryPurple),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
@@ -64,7 +64,7 @@ class AppTheme {
     primaryColor: secondaryLavender,
     colorScheme: ColorScheme.dark(
       primary: secondaryLavender,
-      secondary: primaryBlue,
+      secondary: primaryPurple,
       background: softBlack,
       onPrimary: Colors.black,
       onSecondary: Colors.white,

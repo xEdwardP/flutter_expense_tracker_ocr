@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/add_transaction_page.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/profile_page.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/resume_page.dart';
+import 'package:flutter_expense_tracker_ocr/views/pages/transaction_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,40 +14,23 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
+  final List<Widget> _pages = [
+    const ResumePage(),
+    const TransactionsList(),
+    const AddTransactionPage(),
+    const ProfileScreen(),
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-
-    switch (index) {
-      case 0:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const HomePage()));
-        break;
-      case 1:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionListPage()));
-        break;
-      case 2:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage()));
-        break;
-      case 3:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()));
-        break;
-      case 4:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
-        break;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Expense Tracker OCR")),
-      body: Center(
-        child: Text(
-          "Página seleccionada: $_selectedIndex",
-          style: const TextStyle(fontSize: 20),
-        ),
-      ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
