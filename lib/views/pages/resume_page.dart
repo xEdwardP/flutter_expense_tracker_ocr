@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/transaction.dart';
+import 'package:flutter_expense_tracker_ocr/models/transaction.dart';
 
 class ResumePage extends StatelessWidget {
   const ResumePage({super.key});
@@ -216,7 +216,7 @@ class ResumePage extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              "${t.type == TransactionType.income ? "Ingreso" : "Gasto"} - ${t.categoryId}",
+              t.type == TransactionType.income ? "Ingreso" : "Gasto",
               style: const TextStyle(fontSize: 16),
             ),
           ),
