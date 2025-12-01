@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/transaction_controller.dart';
 
@@ -15,25 +15,29 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final TextEditingController titleCtrl = TextEditingController();
   final TextEditingController amountCtrl = TextEditingController();
 
-  File? ticketImage;
   bool loadingOCR = false;
   String transactionType = "Gasto";
 
   Future<void> pickTicketImage() async {
-    final image = await controller.pickImage();
-    if (image == null) return;
+    await controller.pickImage();
 
     setState(() {
-      ticketImage = image;
       loadingOCR = true;
     });
 
-    final detected = await controller.detectAmount(image);
+    final detected = await controller.detectAmount();
 
     setState(() => loadingOCR = false);
 
     if (detected != null) {
       amountCtrl.text = detected;
+    } else if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No se detectó el total en el ticket"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -52,7 +56,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       title: titleCtrl.text,
       amount: double.tryParse(amountCtrl.text) ?? 0,
       type: transactionType,
-      ticketImage: ticketImage,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -64,10 +67,34 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
     titleCtrl.clear();
     amountCtrl.clear();
+    controller.clearImage();
     setState(() {
-      ticketImage = null;
       transactionType = "Gasto";
     });
+  }
+
+  Widget _imagePreview() {
+    if (controller.ticketImageFile != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.file(
+          controller.ticketImageFile!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
+      );
+    } else if (controller.ticketImageBytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.memory(
+          controller.ticketImageBytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
+      );
+    } else {
+      return const Center(child: Text("Toca para tomar/subir foto del ticket"));
+    }
   }
 
   @override
@@ -104,9 +131,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             TextField(
               controller: titleCtrl,
               decoration: InputDecoration(
@@ -117,9 +142,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               controller: amountCtrl,
               keyboardType: TextInputType.number,
@@ -132,9 +155,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             GestureDetector(
               onTap: pickTicketImage,
               child: Container(
@@ -144,27 +165,12 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(color: Colors.blueAccent),
                 ),
-                child: ticketImage == null
-                    ? const Center(
-                        child: Text("Toca para tomar foto del ticket"),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.file(
-                          ticketImage!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
+                child: _imagePreview(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             if (loadingOCR) const CircularProgressIndicator(),
-
             const SizedBox(height: 20),
-
             ElevatedButton.icon(
               onPressed: saveTransaction,
               icon: const Icon(Icons.save),
