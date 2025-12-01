@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/transaction_controller.dart';
+import 'transaction_detail_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
   const AddTransactionPage({super.key});
@@ -12,33 +12,50 @@ class AddTransactionPage extends StatefulWidget {
 class _AddTransactionPageState extends State<AddTransactionPage> {
   final TransactionController controller = TransactionController();
 
-  final TextEditingController titleCtrl = TextEditingController();
+  final TextEditingController noteCtrl = TextEditingController();
   final TextEditingController amountCtrl = TextEditingController();
 
-  File? ticketImage;
   bool loadingOCR = false;
+  bool uploading = false;
   String transactionType = "Gasto";
+  String infoMsg = "";
 
   Future<void> pickTicketImage() async {
-    final image = await controller.pickImage();
-    if (image == null) return;
+    infoMsg = "";
+    await controller.pickImage();
 
     setState(() {
-      ticketImage = image;
       loadingOCR = true;
     });
 
-    final detected = await controller.detectAmount(image);
+    if (controller.ticketImageFile != null) {
+      final detected = await controller.detectAmount();
+      setState(() => loadingOCR = false);
 
-    setState(() => loadingOCR = false);
-
-    if (detected != null) {
-      amountCtrl.text = detected;
+      if (detected != null) {
+        amountCtrl.text = detected;
+        infoMsg = "Monto detectado automáticamente.";
+      } else {
+        infoMsg =
+            "No se detectó el monto en el ticket. Ingresa el valor manualmente.";
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No se detectó el total en el ticket"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      setState(() {
+        loadingOCR = false;
+        amountCtrl.text = "";
+        infoMsg = "No se seleccionó ninguna imagen.";
+      });
     }
   }
 
   Future<void> saveTransaction() async {
-    if (titleCtrl.text.isEmpty || amountCtrl.text.isEmpty) {
+    if (noteCtrl.text.isEmpty || amountCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Por favor completa todos los campos"),
@@ -48,26 +65,63 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       return;
     }
 
-    await controller.saveTransaction(
-      title: titleCtrl.text,
-      amount: double.tryParse(amountCtrl.text) ?? 0,
-      type: transactionType,
-      ticketImage: ticketImage,
-    );
+    setState(() => uploading = true);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("$transactionType guardado correctamente"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    try {
+      final docRef = await controller.saveTransactionWithPhoto(
+        note: noteCtrl.text,
+        amount: double.tryParse(amountCtrl.text) ?? 0,
+        type: transactionType,
+      );
 
-    titleCtrl.clear();
-    amountCtrl.clear();
-    setState(() {
-      ticketImage = null;
-      transactionType = "Gasto";
-    });
+      final doc = await docRef.get();
+      final transaction = doc.data() as Map<String, dynamic>;
+
+      noteCtrl.clear();
+      amountCtrl.clear();
+      controller.clearImage();
+      setState(() {
+        transactionType = "Gasto";
+        infoMsg = "";
+        uploading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Transacción guardada"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TransactionDetailPage(transaction: transaction),
+        ),
+      );
+    } catch (e) {
+      setState(() => uploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al guardar: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _imagePreview() {
+    if (controller.ticketImageFile != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.file(
+          controller.ticketImageFile!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
+      );
+    } else {
+      return const Center(child: Text("Toca para tomar foto del ticket"));
+    }
   }
 
   @override
@@ -104,11 +158,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             TextField(
-              controller: titleCtrl,
+              controller: noteCtrl,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.note),
                 labelText: "Nota",
@@ -117,9 +169,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               controller: amountCtrl,
               keyboardType: TextInputType.number,
@@ -132,9 +182,18 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
               ),
             ),
-
+            if (infoMsg.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  infoMsg,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             const SizedBox(height: 20),
-
             GestureDetector(
               onTap: pickTicketImage,
               child: Container(
@@ -144,29 +203,22 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(color: Colors.blueAccent),
                 ),
-                child: ticketImage == null
-                    ? const Center(
-                        child: Text("Toca para tomar foto del ticket"),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.file(
-                          ticketImage!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
+                child: _imagePreview(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             if (loadingOCR) const CircularProgressIndicator(),
-
+            if (uploading)
+              Column(
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 10),
+                  Text("Subiendo y guardando..."),
+                ],
+              ),
             const SizedBox(height: 20),
-
             ElevatedButton.icon(
-              onPressed: saveTransaction,
+              onPressed: uploading ? null : saveTransaction,
               icon: const Icon(Icons.save),
               label: const Text("Guardar Transacción"),
               style: ElevatedButton.styleFrom(

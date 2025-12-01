@@ -5,7 +5,6 @@ class TransactionModel {
   final double amount;
   final DateTime date;
   final TransactionType type;
-  final String categoryId;
   final String? note;
   final String? ticketPhotoUrl;
 
@@ -14,7 +13,6 @@ class TransactionModel {
     required this.amount,
     required this.date,
     required this.type,
-    required this.categoryId,
     this.note,
     this.ticketPhotoUrl,
   });
@@ -30,7 +28,6 @@ class TransactionModel {
       type: data['type'] == 'income'
           ? TransactionType.income
           : TransactionType.expense,
-      categoryId: data['categoryId'] ?? '',
       note: data['note'],
       ticketPhotoUrl: data['ticketPhotoUrl'],
     );
@@ -41,7 +38,6 @@ class TransactionModel {
       'amount': amount,
       'date': date.toIso8601String(),
       'type': type == TransactionType.income ? 'income' : 'expense',
-      'categoryId': categoryId,
       'note': note,
       'ticketPhotoUrl': ticketPhotoUrl,
     };

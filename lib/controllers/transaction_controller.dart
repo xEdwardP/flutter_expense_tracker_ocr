@@ -1,53 +1,50 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_expense_tracker_ocr/services/ocr_service.dart';
+import 'package:flutter_expense_tracker_ocr/services/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TransactionController {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final OCRService _ocr = OCRService();
+  final OcrService _ocrService = OcrService();
+  final StorageService _storage = StorageService();
 
-  Future<File?> pickImage() async {
+  File? ticketImageFile;
+
+  Future<void> pickImage() async {
     final XFile? picked = await ImagePicker().pickImage(
       source: ImageSource.camera,
-      imageQuality: 70,
+      imageQuality: 75,
     );
-
-    if (picked == null) return null;
-    return File(picked.path);
+    ticketImageFile = picked != null ? File(picked.path) : null;
   }
 
-  Future<String?> detectAmount(File image) async {
-    return await _ocr.extractTotal(image);
+  Future<String?> detectAmount() async {
+    if (ticketImageFile == null) return null;
+    return await _ocrService.extractTotal(ticketImageFile!);
   }
 
-  Future<String?> uploadTicket(File? file) async {
-    if (file == null) return null;
-
-    final ref = _storage.ref().child(
-      "tickets/${DateTime.now().millisecondsSinceEpoch}.jpg",
-    );
-
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
+  Future<String?> uploadImageToFirebase() async {
+    if (ticketImageFile == null) return null;
+    return await _storage.uploadImage(ticketImageFile!, 'tickets');
   }
 
-  Future<void> saveTransaction({
-    required String title,
+  Future<DocumentReference> saveTransactionWithPhoto({
+    required String note,
     required double amount,
     required String type,
-    File? ticketImage,
   }) async {
-    final imageUrl = await uploadTicket(ticketImage);
+    final imageURL = await uploadImageToFirebase();
 
-    await _db.collection("transactions").add({
-      "title": title,
+    return await FirebaseFirestore.instance.collection("transactions").add({
+      "note": note,
       "amount": amount,
-      "type": type,
-      "imageUrl": imageUrl,
       "date": DateTime.now(),
+      "type": type,
+      "ticketPhotoUrl": imageURL,
     });
+  }
+
+  void clearImage() {
+    ticketImageFile = null;
   }
 }
