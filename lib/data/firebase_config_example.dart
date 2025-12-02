@@ -1,12 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 
 const firebaseConfig = FirebaseOptions(
-   apiKey: "AIzaSyBBhZkCB0NC0AL3Us5sJF3H1ahXyq3I6Bs",
-  authDomain: "ppmii-dfa87.firebaseapp.com",
-  projectId: "ppmii-dfa87",
-  storageBucket: "ppmii-dfa87.firebasestorage.app",
-  messagingSenderId: "1066492841268",
-  appId: "1:1066492841268:web:186e27bb619d579e376961"
+  apiKey: "AIzaSyCPFVJStuovsN3_-cCmNZBfULxSxB92E4g",
+  authDomain: "spendwise-3154f.firebaseapp.com",
+  projectId: "spendwise-3154f",
+  storageBucket: "spendwise-3154f.firebasestorage.app",
+  messagingSenderId: "49973677896",
+  appId: "1:49973677896:web:50fe554ac3098e76242d7d",
 );
 
-const webClientToken = "";
+const webClientToken =
+    "49973677896-kchr86598hecp949iqq2gemb18ucsr4j.apps.googleusercontent.com";
