@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'transaction_detail_page.dart';
 
 class TransactionsList extends StatefulWidget {
@@ -196,6 +197,10 @@ class _TransactionsListState extends State<TransactionsList> {
                           ? Colors.green
                           : Colors.red;
 
+                      final timestamp = data['date'] as Timestamp;
+                      final date = timestamp.toDate();
+                      final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(date);
+
                       return ListTile(
                         title: Text(
                           'L. ${data['amount']}',
@@ -204,7 +209,7 @@ class _TransactionsListState extends State<TransactionsList> {
                             color: amountColor,
                           ),
                         ),
-                        subtitle: Text(data['date']),
+                        subtitle: Text(formattedDate),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
