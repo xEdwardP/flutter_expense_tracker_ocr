@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_expense_tracker_ocr/services/ocr_service.dart';
 import 'package:flutter_expense_tracker_ocr/services/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,13 +35,19 @@ class TransactionController {
     required String type,
   }) async {
     final imageURL = await uploadImageToFirebase();
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("Usuario no autenticado");
+    }
 
     return await FirebaseFirestore.instance.collection("transactions").add({
       "note": note,
       "amount": amount,
-      "date": DateTime.now(),
+      "date": DateTime.now().toIso8601String(),
       "type": type,
       "ticketPhotoUrl": imageURL,
+      "userId": user.uid,
     });
   }
 

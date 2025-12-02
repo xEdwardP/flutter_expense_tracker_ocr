@@ -7,6 +7,7 @@ class TransactionModel {
   final TransactionType type;
   final String? note;
   final String? ticketPhotoUrl;
+  final String userId;
 
   TransactionModel({
     required this.id,
@@ -15,6 +16,7 @@ class TransactionModel {
     required this.type,
     this.note,
     this.ticketPhotoUrl,
+    required this.userId,
   });
 
   factory TransactionModel.fromMap(
@@ -30,6 +32,7 @@ class TransactionModel {
           : TransactionType.expense,
       note: data['note'],
       ticketPhotoUrl: data['ticketPhotoUrl'],
+      userId: data['userId'] ?? '',
     );
   }
 
@@ -40,6 +43,7 @@ class TransactionModel {
       'type': type == TransactionType.income ? 'income' : 'expense',
       'note': note,
       'ticketPhotoUrl': ticketPhotoUrl,
+      'userId': userId,
     };
   }
 }
