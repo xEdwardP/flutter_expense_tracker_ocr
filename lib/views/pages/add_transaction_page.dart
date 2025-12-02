@@ -71,7 +71,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       final docRef = await controller.saveTransactionWithPhoto(
         note: noteCtrl.text,
         amount: double.tryParse(amountCtrl.text) ?? 0,
-        type: transactionType,
+        type: transactionType == "Ingreso" ? "income" : "expense",
       );
 
       final doc = await docRef.get();
@@ -120,7 +120,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         ),
       );
     } else {
-      return const Center(child: Text("Toca para tomar foto del ticket"));
+      return const Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.camera_alt, size: 40, color: Colors.blueAccent),
+            SizedBox(width: 10),
+            Text("Toca para tomar foto del ticket"),
+          ],
+        ),
+      );
     }
   }
 
@@ -140,7 +149,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ChoiceChip(
-                  label: const Text("Gasto"),
+                  label: Row(
+                    children: [
+                      const Icon(Icons.arrow_downward, color: Colors.red),
+                      const SizedBox(width: 5),
+                      const Text("Gasto"),
+                    ],
+                  ),
                   selected: transactionType == "Gasto",
                   selectedColor: Colors.red.shade100,
                   onSelected: (_) {
@@ -149,7 +164,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
                 const SizedBox(width: 10),
                 ChoiceChip(
-                  label: const Text("Ingreso"),
+                  label: Row(
+                    children: [
+                      const Icon(Icons.arrow_upward, color: Colors.green),
+                      const SizedBox(width: 5),
+                      const Text("Ingreso"),
+                    ],
+                  ),
                   selected: transactionType == "Ingreso",
                   selectedColor: Colors.green.shade100,
                   onSelected: (_) {
