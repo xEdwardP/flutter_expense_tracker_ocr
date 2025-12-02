@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TransactionDetailPage extends StatelessWidget {
   final Map<String, dynamic> transaction;
@@ -12,6 +13,9 @@ class TransactionDetailPage extends StatelessWidget {
     final type = transaction['type'];
     final note = transaction['note'] ?? "Sin nota";
     final imageUrl = transaction['imageUrl'];
+
+    final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(date.toDate());
+   
 
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +62,7 @@ class TransactionDetailPage extends StatelessWidget {
                   children: [
                     const Icon(Icons.calendar_today, color: Colors.deepPurple),
                     const SizedBox(width: 10),
-                    Text("Fecha: $date", style: const TextStyle(fontSize: 16)),
+                    Text("Fecha: $formattedDate", style: const TextStyle(fontSize: 16)),
                   ],
                 ),
                 const SizedBox(height: 16),
