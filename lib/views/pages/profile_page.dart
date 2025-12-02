@@ -1,68 +1,199 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import '/controllers/profile_controller.dart';
-import '/models/user.dart';
+import 'package:flutter_expense_tracker_ocr/app.dart';
+import 'package:image_picker/image_picker.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
-  final _controller = ProfileController();
+class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  UserModel? user;
-  File? newImage;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+  final _storage = FirebaseStorage.instance;
 
-  bool loading = true;
-  bool saving = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  String? _name;
+  String? _phone;
+  String? _email;
+  String? _photoUrl;
+
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-    loadUser();
+    _loadUserData();
   }
 
-  Future<void> loadUser() async {
-    user = await _controller.loadUserData();
-    setState(() => loading = false);
-  }
+  Future<void> _loadUserData() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-  Future<void> pickImage(bool camera) async {
-    final file = await _controller.pickImage(camera);
-    if (file != null) {
-      setState(() => newImage = file);
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        _name = data['name'];
+        _phone = data['phone'];
+        _photoUrl = data['photoUrl'];
+      } else {
+        _name = user.displayName;
+        _phone = '';
+        _photoUrl = user.photoURL;
+
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': _name ?? '',
+          'phone': _phone ?? '',
+          'photoUrl': _photoUrl ?? '',
+          'email': user.email ?? '',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      _email = user.email;
+    } catch (e) {
+      debugPrint('Error cargando datos del usuario: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al cargar el perfil')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> save() async {
+  Future<void> _pickImage(bool fromCamera) async {
+    final picker = ImagePicker();
+
+    final pickedFile = await picker.pickImage(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadProfileImage(String uid) async {
+    if (_imageFile == null) return _photoUrl;
+
+    final ref = _storage.ref().child('user_profiles').child('$uid.jpg');
+    await ref.putFile(_imageFile!);
+    return await ref.getDownloadURL();
+  }
+
+  Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
     _formKey.currentState!.save();
+    final user = _auth.currentUser;
+    if (user == null) return;
 
-    setState(() => saving = true);
+    setState(() => _isSaving = true);
 
-    await _controller.saveProfile(user!, newImage);
+    try {
+      final photoUrl = await _uploadProfileImage(user.uid);
 
-    setState(() => saving = false);
+      await _firestore.collection('users').doc(user.uid).update({
+        'name': _name,
+        'phone': _phone,
+        'photoUrl': photoUrl,
+      });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Perfil actualizado")));
+      await user.updateDisplayName(_name);
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        await user.updatePhotoURL(photoUrl);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text(
+                  "Perfil actualizado con éxito",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error guardando perfil: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: Row(
+              children: const [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Error al guardar los cambios",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Perfil")),
+      appBar: AppBar(
+        title: const Text(
+          "Perfil",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -72,24 +203,32 @@ class _ProfilePageState extends State<ProfilePage> {
               Stack(
                 children: [
                   CircleAvatar(
-                    radius: 65,
-                    backgroundImage: newImage != null
-                        ? FileImage(newImage!)
-                        : (user!.photoUrl != null && user!.photoUrl!.isNotEmpty)
-                            ? NetworkImage(user!.photoUrl!)
-                            : const AssetImage("assets/avatar_placeholder.png")
-                                as ImageProvider,
+                    radius: 60,
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!)
+                        : (_photoUrl != null && _photoUrl!.isNotEmpty)
+                        ? NetworkImage(_photoUrl!)
+                        : const AssetImage('assets/avatar_placeholder.png')
+                              as ImageProvider,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: PopupMenuButton<String>(
-                      icon: const CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        child: Icon(Icons.camera_alt, color: Colors.white),
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.blue,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                        ),
                       ),
                       onSelected: (value) {
-                        pickImage(value == "camera");
+                        if (value == "camera") _pickImage(true);
+                        if (value == "gallery") _pickImage(false);
                       },
                       itemBuilder: (_) => [
                         const PopupMenuItem(
@@ -98,52 +237,114 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         const PopupMenuItem(
                           value: "gallery",
-                          child: Text("Galería"),
+                          child: Text("Elegir de galería"),
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               TextFormField(
-                initialValue: user!.name,
+                initialValue: _name ?? '',
                 decoration: const InputDecoration(
-                  labelText: "Nombre",
+                  labelText: 'Nombre',
                   border: OutlineInputBorder(),
                 ),
-                onSaved: (v) => user = UserModel(
-                  uid: user!.uid,
-                  name: v,
-                  email: user!.email,
-                  photoUrl: user!.photoUrl,
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "Ingresa un nombre" : null,
+                onSaved: (value) => _name = value?.trim(),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Ingresa tu nombre'
+                    : null,
               ),
 
               const SizedBox(height: 16),
 
               TextFormField(
-                initialValue: user!.email,
+                initialValue: _phone ?? '',
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                onSaved: (value) => _phone = value?.trim(),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                initialValue: _email ?? '',
                 enabled: false,
                 decoration: const InputDecoration(
-                  labelText: "Correo",
+                  labelText: 'Correo',
                   border: OutlineInputBorder(),
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 32),
 
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: saving ? null : save,
-                  child: saving
-                      ? const CircularProgressIndicator()
-                      : const Text("Guardar cambios"),
+                child: ElevatedButton.icon(
+                  onPressed: _isSaving ? null : _saveProfile,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(_isSaving ? 'Guardando...' : 'Guardar cambios'),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text(
+                    "Cerrar sesión",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.green.shade600,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.all(12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        content: Row(
+                          children: const [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text(
+                              "Sesión cerrada con éxito",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+
+                    await Future.delayed(const Duration(milliseconds: 900));
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyApp(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                 ),
               ),
             ],
