@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const ResumePage(),
+    ResumePage(),
     const TransactionsList(),
     const AddTransactionPage(),
     const ProfileScreen(),
