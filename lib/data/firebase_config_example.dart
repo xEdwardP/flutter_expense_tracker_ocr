@@ -9,5 +9,4 @@ const firebaseConfig = FirebaseOptions(
   appId: "",
 );
 
-const webClientToken =
-    "";
+const webClientToken = "";
