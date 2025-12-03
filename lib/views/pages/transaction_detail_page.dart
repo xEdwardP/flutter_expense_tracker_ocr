@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -14,8 +15,16 @@ class TransactionDetailPage extends StatelessWidget {
     final note = transaction['note'] ?? "Sin nota";
     final imageUrl = transaction['imageUrl'];
 
-    final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(date.toDate());
-   
+    DateTime parsedDate;
+
+    if (date is String) {
+      parsedDate = DateTime.parse(date);
+    } else if (date is Timestamp) {
+      parsedDate = date.toDate();
+    } else {
+      parsedDate = DateTime.now();
+    }
+    final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(parsedDate);
 
     return Scaffold(
       appBar: AppBar(
@@ -62,7 +71,10 @@ class TransactionDetailPage extends StatelessWidget {
                   children: [
                     const Icon(Icons.calendar_today, color: Colors.deepPurple),
                     const SizedBox(width: 10),
-                    Text("Fecha: $formattedDate", style: const TextStyle(fontSize: 16)),
+                    Text(
+                      "Fecha: $formattedDate",
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
