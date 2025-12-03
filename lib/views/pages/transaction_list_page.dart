@@ -12,48 +12,47 @@ class TransactionsList extends StatefulWidget {
 }
 
 class _TransactionsListState extends State<TransactionsList> {
-  final TransactionController controller = TransactionController();
+  final controller = TransactionController();
 
   @override
   void initState() {
     super.initState();
-    loadTransactions(initial: true);
+    controller.fetchInitial().then((_) => setState(() {}));
   }
 
-  Future<void> loadTransactions({bool initial = false, bool next = true}) async {
-    setState(() {
-      controller.isLoading = true;
-    });
-
-    await controller.fetchTransactions(initial: initial, next : next);
-    setState(() {});
-  }
-
-  void confirmDelete(String id) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Eliminar transacción"),
-        content: const Text(
-            "¿Seguro que deseas eliminar esta transacción? Esta acción no se puede deshacer."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await controller.deleteTransaction(id);
-              await loadTransactions(initial: true);
-            },
-            child: const Text("Eliminar"),
-          ),
-        ],
+  Future<void> confirmDelete(String id) async {
+  return showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      icon: const Icon(
+        Icons.warning_amber_rounded,
+        color: Colors.red,
+        size: 48,
       ),
-    );
-  }
+      title: const Text("Confirmar eliminación"),
+      content: const Text(
+        "¿Seguro que deseas eliminar esta transacción?"
+        " Esta acción no se puede deshacer."
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancelar"),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await controller.deleteTransaction(id);
+            await controller.fetchInitial();
+            setState(() {});
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text("Eliminar"),
+        )
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -61,90 +60,112 @@ class _TransactionsListState extends State<TransactionsList> {
       appBar: AppBar(title: const Text("Transacciones")),
       body: Column(
         children: [
-          Expanded(
-            child: controller.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : controller.transactions.isEmpty
-                    ? const Center(child: Text("No hay transacciones"))
-                    : ListView.builder(
-                        itemCount: controller.transactions.length,
-                        itemBuilder: (context, index) {
-                          final doc = controller.transactions[index];
-                          final data = doc.data() as Map<String, dynamic>;
+          Expanded(child: buildList()),
+          buildPagination(),
+        ],
+      ),
+    );
+  }
 
-                          final amountColor =
-                              data['type'] == 'income' ? Colors.green : Colors.red;
+  Widget buildList() {
+    if (controller.isLoading && controller.transactions.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                          DateTime date;
-                          if (data['date'] is Timestamp) {
-                            date = (data['date'] as Timestamp).toDate();
-                          } else if (data['date'] is String) {
-                            date = DateTime.parse(data['date'] as String);
-                          } else {
-                            date = DateTime.now();
-                          }
+    return ListView.builder(
+      itemCount: controller.transactions.length,
+      itemBuilder: (context, index) {
+        final doc = controller.transactions[index];
+        final data = doc.data() as Map<String, dynamic>;
 
-                          final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(date);
+        DateTime date;
+        if (data['date'] is Timestamp) {
+          date = (data['date'] as Timestamp).toDate();
+        } else {
+          date = DateTime.tryParse(data['date'].toString()) ?? DateTime.now();
+        }
 
-                          return ListTile(
-                            title: Text(
-                              'L. ${data['amount']}',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, color: amountColor),
-                            ),
-                            subtitle: Text(formattedDate),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => TransactionDetailPage(
-                                          transaction: data,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text("Ver"),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () => confirmDelete(doc.id),
-                                  child: const Text("Borrar"),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-          ),
-          if (!controller.isLoading)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: controller.hasMorePrev
-                      ? () => loadTransactions(next: false)
-                      : null,
-                  child: const Text("Anterior"),
-                ),
-                const SizedBox(width: 20),
-                Text("Página ${controller.currentPage}"),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: controller.hasMoreNext
-                      ? () => loadTransactions(next: true)
-                      : null,
-                  child: const Text("Siguiente"),
-                ),
-              ],
+        final double amount = (data["amount"] ?? 0).toDouble();
+
+        final String type = data["type"] ?? "income";
+
+        final Color amountColor =
+            type == "expense" ? Colors.red : Colors.green;
+
+        return ListTile(
+          title: Text(
+            "L. ${amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: amountColor,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+          subtitle: Text(DateFormat("dd/MM/yyyy HH:mm").format(date)),
+
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Botón Detalles
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransactionDetailPage(
+                        transaction: data,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Detalles"),
+              ),
+              const SizedBox(width: 10),
+
+              // Botón Eliminar
+              ElevatedButton(
+                onPressed: () => confirmDelete(doc.id),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text("Eliminar"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget buildPagination() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: controller.hasMorePrev && !controller.isLoading
+                ? () async {
+                    await controller.fetchPrevious();
+                    setState(() {});
+                  }
+                : null,
+            child: const Text("Anterior"),
+          ),
+          const SizedBox(width: 20),
+          Text("Página ${controller.currentPage}",
+              style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 20),
+          ElevatedButton(
+            onPressed: controller.hasMoreNext && !controller.isLoading
+                ? () async {
+                    await controller.fetchNext();
+                    setState(() {});
+                  }
+                : null,
+            child: const Text("Siguiente"),
+          ),
         ],
       ),
     );
   }
 }
+

@@ -3,17 +3,37 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class TransactionController {
   final int pageSize = 6;
-  DocumentSnapshot? lastDocument;
-  DocumentSnapshot? firstDocument;
-  int currentPage = 1;
+  
+  final List<DocumentSnapshot> pageStartStack = [];
 
-  List<DocumentSnapshot> transactions = [];
+  bool isLoading = false;
   bool hasMoreNext = true;
   bool hasMorePrev = false;
 
-  bool isLoading = false;
+  List<DocumentSnapshot> transactions = [];
+  DocumentSnapshot? lastDocument;
 
-  Future<void> fetchTransactions({bool next = true, bool initial = false}) async {
+  int currentPage = 1;
+
+  Future<void> fetchInitial() async {
+    pageStartStack.clear();
+    lastDocument = null;
+    currentPage = 1;
+
+    await _fetchPage(isNext: true, isInitial: true);
+  }
+
+  Future<void> fetchNext() async {
+    if (!hasMoreNext || isLoading) return;
+    await _fetchPage(isNext: true);
+  }
+
+  Future<void> fetchPrevious() async {
+    if (!hasMorePrev || isLoading) return;
+    await _fetchPage(isNext: false);
+  }
+
+  Future<void> _fetchPage({required bool isNext, bool isInitial = false}) async {
     isLoading = true;
 
     final user = FirebaseAuth.instance.currentUser;
@@ -23,38 +43,37 @@ class TransactionController {
         .where('userId', isEqualTo: user?.uid)
         .orderBy('date', descending: true)
         .limit(pageSize);
-        
 
-    if (initial) {
-      lastDocument = null;
-      firstDocument = null;
-      currentPage = 1;
+    if (isNext && lastDocument != null) {
+      query = query.startAfterDocument(lastDocument!);
     }
 
-    if (next && lastDocument != null) {
-      query = query.startAfterDocument(lastDocument!);
-    } else if (!next && firstDocument != null) {
-      query = query.endBeforeDocument(firstDocument!).limitToLast(pageSize);
+    if (!isNext) {
+      if (pageStartStack.length >= 2) {
+        pageStartStack.removeLast();
+        final previousStart = pageStartStack.last;
+
+        query = query.startAtDocument(previousStart);
+      }
     }
 
     final snapshot = await query.get();
+    transactions = snapshot.docs;
 
     if (snapshot.docs.isNotEmpty) {
-      transactions = snapshot.docs;
-      firstDocument = snapshot.docs.first;
       lastDocument = snapshot.docs.last;
 
-      if (!initial) {
-        if (next) {
-          currentPage++;
-        } else {
-          currentPage--;
-        }
+      if (isNext || isInitial) {
+        pageStartStack.add(snapshot.docs.first);
       }
 
-      hasMoreNext = snapshot.docs.length == pageSize;
-      hasMorePrev = currentPage > 1;
+      if (!isInitial) {
+        currentPage += isNext ? 1 : -1;
+      }
     }
+
+    hasMoreNext = snapshot.docs.length == pageSize;
+    hasMorePrev = currentPage > 1 && pageStartStack.length > 1;
 
     isLoading = false;
   }
