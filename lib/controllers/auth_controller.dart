@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_expense_tracker_ocr/data/firebase_config_example.dart';
+import 'package:flutter_expense_tracker_ocr/data/firebase_config.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthController {
