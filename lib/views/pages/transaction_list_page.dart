@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../controllers/transaction_list_controller.dart';
 import 'transaction_detail_page.dart';
 
 class TransactionsList extends StatefulWidget {
@@ -10,288 +12,160 @@ class TransactionsList extends StatefulWidget {
 }
 
 class _TransactionsListState extends State<TransactionsList> {
-  final int pageSize = 6;
-  DocumentSnapshot? lastDocument;
-  DocumentSnapshot? firstDocument;
-  List<DocumentSnapshot> transactions = [];
-  int currentPage = 1;
-  bool isLoading = false;
-  bool hasMoreNext = true;
-  bool hasMorePrev = false;
+  final controller = TransactionController();
 
   @override
   void initState() {
     super.initState();
-    fetchTransactions(initial: true);
+    controller.fetchInitial().then((_) => setState(() {}));
   }
 
-  Future<void> fetchTransactions({
-    bool next = true,
-    bool initial = false,
-  }) async {
-    setState(() => isLoading = true);
-
-    Query query = FirebaseFirestore.instance
-        .collection('transactions')
-        .orderBy('date', descending: true)
-        .limit(pageSize);
-
-    if (initial) {
-      lastDocument = null;
-      firstDocument = null;
-      currentPage = 1;
-    }
-
-    if (next && lastDocument != null) {
-      query = query.startAfterDocument(lastDocument!);
-    } else if (!next && firstDocument != null) {
-      query = query.endBeforeDocument(firstDocument!).limitToLast(pageSize);
-    }
-
-    final snapshot = await query.get();
-
-    if (snapshot.docs.isNotEmpty) {
-      setState(() {
-        transactions = snapshot.docs;
-        firstDocument = snapshot.docs.first;
-        lastDocument = snapshot.docs.last;
-
-        if (!initial) {
-          if (next)
-            currentPage += 1;
-          else
-            currentPage -= 1;
-        }
-
-        hasMoreNext = snapshot.docs.length == pageSize;
-        hasMorePrev = currentPage > 1;
-      });
-    }
-
-    setState(() => isLoading = false);
-  }
-
-  Future<void> deleteTransaction(String id) async {
-    await FirebaseFirestore.instance
-        .collection('transactions')
-        .doc(id)
-        .delete();
-  }
-
-  void confirmDelete(String id) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
-            SizedBox(width: 10),
-            Text(
-              "Eliminar transacción",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
+  Future<void> confirmDelete(String id) async {
+  return showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      icon: const Icon(
+        Icons.warning_amber_rounded,
+        color: Colors.red,
+        size: 48,
+      ),
+      title: const Text("Confirmar eliminación"),
+      content: const Text(
+        "¿Seguro que deseas eliminar esta transacción?"
+        " Esta acción no se puede deshacer."
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancelar"),
         ),
-        content: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Icon(Icons.info_outline, color: Colors.grey, size: 26),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                "¿Seguro que deseas eliminar esta transacción?\n"
-                "Esta acción no se puede deshacer.",
-                style: TextStyle(fontSize: 15),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: Colors.grey),
-            label: const Text("Cancelar"),
-          ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await controller.deleteTransaction(id);
+            await controller.fetchInitial();
+            setState(() {});
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text("Eliminar"),
+        )
+      ],
+    ),
+  );
+}
 
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              minimumSize: const Size(150, 40),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-            ),
-            onPressed: () async {
-              Navigator.pop(context);
-
-              try {
-                await deleteTransaction(id);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.green,
-                    content: Row(
-                      children: const [
-                        Icon(Icons.check_circle, color: Colors.white),
-                        SizedBox(width: 10),
-                        Text("Transacción eliminada correctamente"),
-                      ],
-                    ),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                fetchTransactions(initial: true);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Row(
-                      children: const [
-                        Icon(Icons.error, color: Colors.white),
-                        SizedBox(width: 10),
-                        Text("Error eliminando transacción"),
-                      ],
-                    ),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            icon: const Icon(Icons.delete_forever, color: Colors.white),
-            label: const Text("Eliminar"),
-          ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Transacciones")),
+      body: Column(
+        children: [
+          Expanded(child: buildList()),
+          buildPagination(),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.list, color: Colors.white),
-            const SizedBox(width: 10),
-            const Text(
-              "Transacciones",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+  Widget buildList() {
+    if (controller.isLoading && controller.transactions.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ListView.builder(
+      itemCount: controller.transactions.length,
+      itemBuilder: (context, index) {
+        final doc = controller.transactions[index];
+        final data = doc.data() as Map<String, dynamic>;
+
+        DateTime date;
+        if (data['date'] is Timestamp) {
+          date = (data['date'] as Timestamp).toDate();
+        } else {
+          date = DateTime.tryParse(data['date'].toString()) ?? DateTime.now();
+        }
+
+        final double amount = (data["amount"] ?? 0).toDouble();
+
+        final String type = data["type"] ?? "income";
+
+        final Color amountColor =
+            type == "expense" ? Colors.red : Colors.green;
+
+        return ListTile(
+          title: Text(
+            "L. ${amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: amountColor,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: transactions.isEmpty
-                ? const Center(child: Text("No hay transacciones"))
-                : ListView.builder(
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) {
-                      final doc = transactions[index];
-                      final data = doc.data() as Map<String, dynamic>;
-
-                      final amountColor = data['type'] == 'income'
-                          ? Colors.green
-                          : Colors.red;
-
-                      return ListTile(
-                        title: Text(
-                          'L. ${data['amount']}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: amountColor,
-                          ),
-                        ),
-                        subtitle: Text(data['date']),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                minimumSize: const Size(90, 40),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TransactionDetailPage(
-                                      transaction: data,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.info),
-                              label: const Text("Ver"),
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                minimumSize: const Size(90, 40),
-                              ),
-                              onPressed: () => confirmDelete(doc.id),
-                              icon: const Icon(Icons.delete),
-                              label: const Text("Borrar"),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
           ),
+          subtitle: Text(DateFormat("dd/MM/yyyy HH:mm").format(date)),
 
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(10),
-              child: CircularProgressIndicator(),
-            ),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton.icon(
-                onPressed: hasMorePrev
-                    ? () => fetchTransactions(next: false)
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  // backgroundColor: Colors.deepPurple,
-                  minimumSize: const Size(120, 40),
-                ),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text("Anterior"),
+              // Botón Detalles
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransactionDetailPage(
+                        transaction: data,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Detalles"),
               ),
+              const SizedBox(width: 10),
 
-              const SizedBox(width: 20),
-
-              Text(
-                "Página $currentPage",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(width: 20),
-
-              ElevatedButton.icon(
-                onPressed: hasMoreNext
-                    ? () => fetchTransactions(next: true)
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  // backgroundColor: Colors.deepPurple,
-                  minimumSize: const Size(120, 40),
-                ),
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text("Siguiente"),
+              // Botón Eliminar
+              ElevatedButton(
+                onPressed: () => confirmDelete(doc.id),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text("Eliminar"),
               ),
             ],
           ),
+        );
+      },
+    );
+  }
 
-          const SizedBox(height: 20),
+  Widget buildPagination() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: controller.hasMorePrev && !controller.isLoading
+                ? () async {
+                    await controller.fetchPrevious();
+                    setState(() {});
+                  }
+                : null,
+            child: const Text("Anterior"),
+          ),
+          const SizedBox(width: 20),
+          Text("Página ${controller.currentPage}",
+              style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 20),
+          ElevatedButton(
+            onPressed: controller.hasMoreNext && !controller.isLoading
+                ? () async {
+                    await controller.fetchNext();
+                    setState(() {});
+                  }
+                : null,
+            child: const Text("Siguiente"),
+          ),
         ],
       ),
     );
   }
 }
+

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/app.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -47,9 +48,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (doc.exists) {
         final data = doc.data()!;
-        _name = data['name'] as String?;
-        _phone = data['phone'] as String?;
-        _photoUrl = data['photoUrl'] as String?;
+        _name = data['name'];
+        _phone = data['phone'];
+        _photoUrl = data['photoUrl'];
       } else {
         _name = user.displayName;
         _phone = '';
@@ -68,9 +69,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error cargando datos del usuario: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error al cargar el perfil')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al cargar el perfil')),
+        );
       }
     } finally {
       if (mounted) {
@@ -79,12 +80,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _pickImageFromCamera() async {
+  Future<void> _pickImage(bool fromCamera) async {
     final picker = ImagePicker();
 
     final pickedFile = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 75,
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 80,
     );
 
     if (pickedFile != null) {
@@ -98,10 +99,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_imageFile == null) return _photoUrl;
 
     final ref = _storage.ref().child('user_profiles').child('$uid.jpg');
-
-    final uploadTask = await ref.putFile(_imageFile!);
-    final url = await uploadTask.ref.getDownloadURL();
-    return url;
+    await ref.putFile(_imageFile!);
+    return await ref.getDownloadURL();
   }
 
   Future<void> _saveProfile() async {
@@ -117,27 +116,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final photoUrl = await _uploadProfileImage(user.uid);
 
       await _firestore.collection('users').doc(user.uid).update({
-        'name': _name ?? '',
-        'phone': _phone ?? '',
-        'photoUrl': photoUrl ?? '',
+        'name': _name,
+        'phone': _phone,
+        'photoUrl': photoUrl,
       });
 
       await user.updateDisplayName(_name);
       if (photoUrl != null && photoUrl.isNotEmpty) {
         await user.updatePhotoURL(photoUrl);
       }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Perfil actualizado correctamente')),
+          SnackBar(
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text(
+                  "Perfil actualizado con éxito",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
         );
       }
     } catch (e) {
       debugPrint('Error guardando perfil: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error al guardar los cambios')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: Row(
+              children: const [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Error al guardar los cambios",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -154,17 +188,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person, color: Colors.white),
-            const SizedBox(width: 10),
-            const Text(
-              "Perfil",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-          ],
+        title: const Text(
+          "Perfil",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -179,30 +207,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundImage: _imageFile != null
                         ? FileImage(_imageFile!)
                         : (_photoUrl != null && _photoUrl!.isNotEmpty)
-                        ? NetworkImage(_photoUrl!) as ImageProvider
-                        : const AssetImage('assets/avatar_placeholder.png'),
+                        ? NetworkImage(_photoUrl!)
+                        : const AssetImage('assets/avatar_placeholder.png')
+                              as ImageProvider,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: InkWell(
-                      onTap: _pickImageFromCamera,
-                      child: Container(
+                    child: PopupMenuButton<String>(
+                      icon: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
+                          color: Colors.blue,
                         ),
                         child: const Icon(
                           Icons.camera_alt,
                           color: Colors.white,
-                          size: 20,
                         ),
                       ),
+                      onSelected: (value) {
+                        if (value == "camera") _pickImage(true);
+                        if (value == "gallery") _pickImage(false);
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          value: "camera",
+                          child: Text("Tomar foto"),
+                        ),
+                        const PopupMenuItem(
+                          value: "gallery",
+                          child: Text("Elegir de galería"),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 24),
 
               TextFormField(
@@ -212,13 +254,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   border: OutlineInputBorder(),
                 ),
                 onSaved: (value) => _name = value?.trim(),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Ingresa tu nombre';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Ingresa tu nombre'
+                    : null,
               ),
+
               const SizedBox(height: 16),
 
               TextFormField(
@@ -230,16 +270,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 keyboardType: TextInputType.phone,
                 onSaved: (value) => _phone = value?.trim(),
               ),
+
               const SizedBox(height: 16),
 
               TextFormField(
                 initialValue: _email ?? '',
+                enabled: false,
                 decoration: const InputDecoration(
                   labelText: 'Correo',
                   border: OutlineInputBorder(),
                 ),
-                enabled: false,
               ),
+
               const SizedBox(height: 32),
 
               SizedBox(
@@ -254,6 +296,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         )
                       : const Icon(Icons.save),
                   label: Text(_isSaving ? 'Guardando...' : 'Guardar cambios'),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text(
+                    "Cerrar sesión",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.green.shade600,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.all(12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        content: Row(
+                          children: const [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text(
+                              "Sesión cerrada con éxito",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+
+                    await Future.delayed(const Duration(milliseconds: 900));
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyApp(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                 ),
               ),
             ],

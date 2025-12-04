@@ -5,18 +5,18 @@ class TransactionModel {
   final double amount;
   final DateTime date;
   final TransactionType type;
-  final String categoryId;
   final String? note;
   final String? ticketPhotoUrl;
+  final String userId;
 
   TransactionModel({
     required this.id,
     required this.amount,
     required this.date,
     required this.type,
-    required this.categoryId,
     this.note,
     this.ticketPhotoUrl,
+    required this.userId,
   });
 
   factory TransactionModel.fromMap(
@@ -30,9 +30,9 @@ class TransactionModel {
       type: data['type'] == 'income'
           ? TransactionType.income
           : TransactionType.expense,
-      categoryId: data['categoryId'] ?? '',
       note: data['note'],
       ticketPhotoUrl: data['ticketPhotoUrl'],
+      userId: data['userId'] ?? '',
     );
   }
 
@@ -41,9 +41,9 @@ class TransactionModel {
       'amount': amount,
       'date': date.toIso8601String(),
       'type': type == TransactionType.income ? 'income' : 'expense',
-      'categoryId': categoryId,
       'note': note,
       'ticketPhotoUrl': ticketPhotoUrl,
+      'userId': userId,
     };
   }
 }
