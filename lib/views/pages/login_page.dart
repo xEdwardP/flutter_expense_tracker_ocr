@@ -23,33 +23,21 @@ class _LoginPageState extends State<LoginPage> {
       if (user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Inicio de sesión exitoso',
-              style: TextStyle(color: Colors.white),
-            ),
+            content: const Text('Inicio de sesión exitoso', style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Error: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
+          content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
           backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(12),
         ),
@@ -63,34 +51,21 @@ class _LoginPageState extends State<LoginPage> {
       if (user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Inicio de sesión con Google exitoso',
-              style: TextStyle(color: Colors.white),
-            ),
+            content: const Text('Inicio de sesión con Google exitoso', style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Error con Google: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
+          content: Text('Error con Google: $e', style: const TextStyle(color: Colors.white)),
           backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(12),
         ),
@@ -115,43 +90,27 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 30),
 
-              Text(
-                'Bienvenido',
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
+              Text('Bienvenido', style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 10),
-
-              Text(
-                'Inicia sesión para continuar',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text('Inicia sesión para continuar', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 40),
 
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.email_outlined),
-                  labelText: 'Correo electrónico',
-                ),
+                decoration: const InputDecoration(prefixIcon: Icon(Icons.email_outlined), labelText: 'Correo electrónico'),
               ),
               const SizedBox(height: 20),
 
               TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.lock_outline),
-                  labelText: 'Contraseña',
-                ),
+                decoration: const InputDecoration(prefixIcon: Icon(Icons.lock_outline), labelText: 'Contraseña'),
               ),
               const SizedBox(height: 30),
 
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loginWithEmail,
-                  child: const Text('Iniciar sesión'),
-                ),
+                child: ElevatedButton(onPressed: _loginWithEmail, child: const Text('Iniciar sesión')),
               ),
               const SizedBox(height: 20),
 
@@ -168,6 +127,21 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: _loginWithGoogle,
                 icon: Image.asset('assets/google_icon.png', height: 24),
                 label: const Text('Iniciar sesión con Google'),
+              ),
+
+              const SizedBox(height: 30),
+              //Aqui los cambios que agregue animal
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, "/register"),
+                child: Text(
+                  "¿No tienes cuenta? Crear una nueva",
+                  style: TextStyle(
+                    color: Colors.blue.shade600,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
             ],
           ),
