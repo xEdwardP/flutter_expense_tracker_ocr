@@ -3,14 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/register_controller.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final RegisterController _registerCtrl = RegisterController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -54,12 +54,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       await Future.delayed(const Duration(milliseconds: 800));
-      Navigator.pushReplacementNamed(
-        context,
-        "/login",
-      ); 
+      Navigator.pushReplacementNamed(context, "/login");
     } else {
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red.shade700,
