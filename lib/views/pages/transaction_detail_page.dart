@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/colors.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/text_strings.dart';
 import 'package:intl/intl.dart';
 
 class TransactionDetailPage extends StatelessWidget {
@@ -26,106 +28,159 @@ class TransactionDetailPage extends StatelessWidget {
     }
     final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(parsedDate);
 
+    final bool isIncome = type == "income";
+    final Color typeColor = isIncome ? Colors.green : Colors.red;
+    final IconData typeIcon = isIncome
+        ? Icons.arrow_upward
+        : Icons.arrow_downward;
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        title: const Text(tAppName),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: tSecondaryColor,
+        foregroundColor: tPrimaryColor,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
-            Icon(Icons.list_alt, color: Colors.white),
-            const SizedBox(width: 10),
-            const Text(
-              "Detalle de Transacción",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [tPrimaryColor, tSecondaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 10,
+                    color: isDarkMode
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.1),
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.monetization_on, color: tWhiteColor, size: 32),
+                      const SizedBox(width: 10),
+                      Text(
+                        "L. $amount",
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: typeColor.withOpacity(0.2),
+                    child: Icon(typeIcon, color: typeColor, size: 28),
+                  ),
+                ],
+              ),
             ),
+
+            const SizedBox(height: 20),
+
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: isDarkMode ? tSecondaryColor : tWhiteColor,
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildDetailRow(
+                      Icons.calendar_today,
+                      "Fecha",
+                      formattedDate,
+                      context,
+                    ),
+                    const Divider(),
+                    _buildDetailRow(
+                      Icons.category,
+                      "Tipo",
+                      isIncome ? "Ingreso" : "Gasto",
+                      context,
+                    ),
+                    const Divider(),
+                    _buildDetailRow(Icons.note, "Nota", note, context),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            if (imageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 220,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Text("No se pudo cargar la imagen");
+                  },
+                ),
+              ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.monetization_on, color: Colors.deepPurple),
-                    const SizedBox(width: 10),
-                    Text(
-                      "Monto: L. $amount",
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+    );
+  }
 
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                    const SizedBox(width: 10),
-                    Text(
-                      "Fecha: $formattedDate",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value,
+    BuildContext context,
+  ) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: isDarkMode ? tPrimaryColor : tSecondaryColor),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? tPrimaryColor : tSecondaryColor,
                 ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    const Icon(Icons.category, color: Colors.deepPurple),
-                    const SizedBox(width: 10),
-                    Text(
-                      type == "income"
-                          ? "Tipo de Transaccion: Ingreso"
-                          : "Tipo de Transaccion: Gasto",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDarkMode ? tWhiteColor : tSecondaryColor,
                 ),
-                const SizedBox(height: 16),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.note, color: Colors.deepPurple),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "Nota: $note",
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                if (imageUrl != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 200,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Text("No se pudo cargar la imagen");
-                      },
-                    ),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/transaction_controller.dart';
+import 'package:flutter_expense_tracker_ocr/core/utils/theme/snackbar_utils.dart';
 import 'transaction_detail_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -38,12 +40,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       } else {
         infoMsg =
             "No se detectó el monto en el ticket. Ingresa el valor manualmente.";
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No se detectó el total en el ticket"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.showError(context, "No se detectó el total en el ticket");
       }
     } else {
       setState(() {
@@ -56,12 +53,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   Future<void> saveTransaction() async {
     if (noteCtrl.text.isEmpty || amountCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Por favor completa todos los campos"),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppSnackBar.showError(context, "Por favor completa todos los campos");
       return;
     }
 
@@ -86,12 +78,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         uploading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Transacción guardada"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppSnackBar.showSuccess(context, "Transacción guardada");
 
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -100,11 +87,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       );
     } catch (e) {
       setState(() => uploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error al guardar: $e"),
-          backgroundColor: Colors.red,
-        ),
+      AppSnackBar.showError(
+        context,
+        "Error al guardar la transacción: ${e.toString()}",
       );
     }
   }
@@ -135,12 +120,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text("Agregar Transacción"),
-        centerTitle: true,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -153,11 +134,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     children: [
                       const Icon(Icons.arrow_downward, color: Colors.red),
                       const SizedBox(width: 5),
-                      const Text("Gasto"),
+                      Text("Gasto", style: TextStyle(color: Colors.red)),
                     ],
                   ),
                   selected: transactionType == "Gasto",
-                  selectedColor: Colors.red.shade100,
+                  selectedColor: Colors.grey.shade300,
                   onSelected: (_) {
                     setState(() => transactionType = "Gasto");
                   },
@@ -168,11 +149,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     children: [
                       const Icon(Icons.arrow_upward, color: Colors.green),
                       const SizedBox(width: 5),
-                      const Text("Ingreso"),
+                      const Text(
+                        "Ingreso",
+                        style: TextStyle(color: Colors.green),
+                      ),
                     ],
                   ),
                   selected: transactionType == "Ingreso",
-                  selectedColor: Colors.green.shade100,
+                  selectedColor: Colors.grey.shade300,
                   onSelected: (_) {
                     setState(() => transactionType = "Ingreso");
                   },
@@ -185,23 +169,22 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.note),
                 labelText: "Nota",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
+              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
             ),
             const SizedBox(height: 15),
             TextField(
               controller: amountCtrl,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.monetization_on),
                 labelText: "Monto",
                 prefixText: "L. ",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
+              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
             ),
             if (infoMsg.isNotEmpty)
               Padding(
@@ -238,13 +221,18 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ],
               ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: uploading ? null : saveTransaction,
-              icon: const Icon(Icons.save),
-              label: const Text("Guardar Transacción"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                minimumSize: const Size(double.infinity, 50),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: uploading ? null : saveTransaction,
+                icon: const Icon(Icons.save),
+                label: const Text("Guardar Transacción"),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: Colors.green,
+                ),
               ),
             ),
           ],

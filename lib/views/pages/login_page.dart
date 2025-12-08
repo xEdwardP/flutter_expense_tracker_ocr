@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/auth_controller.dart';
-import 'package:flutter_expense_tracker_ocr/views/pages/home_page.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/image_strings.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/sizes.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/text_strings.dart';
+import 'package:flutter_expense_tracker_ocr/core/utils/theme/snackbar_utils.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,45 +17,193 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  Future<void> _loginWithEmail() async {
-    try {
-      final user = await _controller.loginWithEmail(
-        emailController.text.trim(),
-        passwordController.text.trim(),
-      );
-      if (user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Inicio de sesión exitoso',
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+  @override
+  Widget build(BuildContext context) {
+    final sizeImage = MediaQuery.of(context).size;
+    var mediaQuery = MediaQuery.of(context);
+    var brightness = mediaQuery.platformBrightness;
+    final isDarkMode = brightness == Brightness.dark;
+    bool obscurePassword = true;
+
+    return SafeArea(
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(tFormHeight - 10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image(
+                  image: const AssetImage(tWelcomePageImage),
+                  height: sizeImage.height * 0.2,
+                ),
+                Text(
+                  tLoginTitle,
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                Text(
+                  tLoginSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+
+                Form(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: tEmail,
+                            prefixIcon: Icon(Icons.person_outline_outlined),
+                          ),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          controller: emailController,
+                        ),
+
+                        SizedBox(height: tFormHeight),
+
+                        TextFormField(
+                          controller: passwordController,
+                          key: ValueKey(obscurePassword),
+                          obscureText: obscurePassword,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.fingerprint),
+                            labelText: tPassword,
+                            // suffixIcon: IconButton(
+                            //   icon: Icon(Icons.remove_red_eye_sharp),
+                            //   onPressed: () {
+                            //     setState(() {
+                            //       obscurePassword = !obscurePassword;
+                            //     });
+                            //   },
+                            // ),
+                          ),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+
+                        const SizedBox(height: tFormHeight - 20),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {},
+                            child: const Text(tForgotPassword),
+                          ),
+                        ),
+
+                        SizedBox(height: tFormHeight - 20),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _loginWithEmail,
+                            child: Text(tLogin.toUpperCase()),
+                          ),
+                        ),
+
+                        const SizedBox(height: tFormHeight - 20.0),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(thickness: 1, endIndent: 10),
+                                ),
+                                Text(
+                                  'O continúa con',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                Expanded(
+                                  child: Divider(thickness: 1, indent: 10),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: tFormHeight - 20.0),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: Image(
+                                  image: AssetImage(tGoogleLogoImage),
+                                  width: 20.0,
+                                ),
+                                onPressed: _loginWithGoogle,
+                                label: Text(
+                                  tSignInWithGoogle,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: tFormHeight - 20.0),
+
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, "/register"),
+                              child: Text.rich(
+                                TextSpan(
+                                  text: tDontHaveAnAccount,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  children: [
+                                    TextSpan(
+                                      text: tSignUp.toUpperCase(),
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
+        ),
+      ),
+    );
+  }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+  // Funciones de inicio de sesión
+  Future<void> _loginWithEmail() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+
+    if (email.isEmpty || password.isEmpty) {
+      AppSnackBar.showError(context, "Por favor, completa todos los campos");
+      return;
+    }
+
+    if (!emailRegex.hasMatch(email)) {
+      AppSnackBar.showError(context, "Ingresa un correo válido");
+      return;
+    }
+
+    if (password.length < 6) {
+      AppSnackBar.showError(
+        context,
+        "La contraseña debe tener al menos 6 caracteres",
+      );
+      return;
+    }
+
+    try {
+      final user = await _controller.loginWithEmail(email, password);
+      if (user != null) {
+        AppSnackBar.showSuccess(context, "Inicio de sesión exitoso");
+
+        Navigator.pushNamed(context, "/home");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(12),
-        ),
-      );
+      AppSnackBar.showError(context, "Ha ocurrido un error: $e");
     }
   }
 
@@ -60,129 +211,12 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final user = await _controller.loginWithGoogle();
       if (user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Inicio de sesión con Google exitoso',
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        AppSnackBar.showSuccess(context, "Inicio de sesión con Google exitoso");
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+        Navigator.pushNamed(context, "/home");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error con Google: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(12),
-        ),
-      );
+      AppSnackBar.showError(context, "Ha ocurrido un error: $e");
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 55,
-                backgroundColor: Colors.grey[300],
-                backgroundImage: const AssetImage('assets/profile.png'),
-              ),
-              const SizedBox(height: 30),
-
-              Text(
-                'Bienvenido',
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Inicia sesión para continuar',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 40),
-
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.email_outlined),
-                  labelText: 'Correo electrónico',
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.lock_outline),
-                  labelText: 'Contraseña',
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loginWithEmail,
-                  child: const Text('Iniciar sesión'),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Row(
-                children: const [
-                  Expanded(child: Divider(thickness: 1, endIndent: 10)),
-                  Text('O continúa con'),
-                  Expanded(child: Divider(thickness: 1, indent: 10)),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              OutlinedButton.icon(
-                onPressed: _loginWithGoogle,
-                icon: Image.asset('assets/google_icon.png', height: 24),
-                label: const Text('Iniciar sesión con Google'),
-              ),
-
-              const SizedBox(height: 30),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, "/register"),
-                child: Text(
-                  "¿No tienes cuenta? Crear una nueva",
-                  style: TextStyle(
-                    color: Colors.blue.shade600,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

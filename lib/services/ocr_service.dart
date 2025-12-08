@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:google_ml_kit/google_ml_kit.dart';
 
 class OcrService {
-  /// Busca el total en el texto de la imagen usando palabras clave y regex
+  // Busca el total en el texto de la imagen usando palabras clave y regex
   Future<String?> extractTotal(File imageFile) async {
     final textRecognizer = TextRecognizer();
     final inputImage = InputImage.fromFile(imageFile);

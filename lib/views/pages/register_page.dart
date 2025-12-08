@@ -1,7 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_expense_tracker_ocr/controllers/register_controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_expense_tracker_ocr/controllers/auth_controller.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/image_strings.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/sizes.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/text_strings.dart';
+import 'package:flutter_expense_tracker_ocr/core/utils/theme/snackbar_utils.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,155 +14,239 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
-  final RegisterController _registerCtrl = RegisterController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  bool _isLoading = false;
-
-  String? _name;
-  String? _email;
-  String? _password;
-  String? _phone;
-
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-
-    setState(() => _isLoading = true);
-
-    final error = await _registerCtrl.registerUser(
-      name: _name!,
-      email: _email!,
-      password: _password!,
-      phone: _phone!,
-    );
-
-    if (!mounted) return;
-
-    if (error == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Text("Registro exitoso", style: TextStyle(color: Colors.white)),
-            ],
-          ),
-        ),
-      );
-
-      await Future.delayed(const Duration(milliseconds: 800));
-      Navigator.pushReplacementNamed(context, "/login");
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(error, style: const TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    setState(() => _isLoading = false);
-  }
+  final AuthController _controller = AuthController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Crear Cuenta",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: "Nombre completo"),
-                validator: (v) => v!.isEmpty ? "Ingrese un nombre" : null,
-                onSaved: (v) => _name = v,
-              ),
-              const SizedBox(height: 15),
-
-              TextFormField(
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: "Correo",
-                  prefixIcon: Icon(Icons.email_outlined),
+    final sizeImage = MediaQuery.of(context).size;
+    var mediaQuery = MediaQuery.of(context);
+    var brightness = mediaQuery.platformBrightness;
+    final isDarkMode = brightness == Brightness.dark;
+    return SafeArea(
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(tFormHeight - 10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Encabezado de la página
+                Image(
+                  image: AssetImage(tWelcomePageImage),
+                  height: sizeImage.height * 0.2,
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return "Ingrese un correo";
-                  if (!v.contains("@gmail.com")) return "Correo inválido";
-                  return null;
-                },
-                onSaved: (v) => _email = v,
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: "Teléfono",
-                  prefixIcon: Icon(Icons.phone),
+                Text(
+                  tRegisterTitle,
+                  style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty)
-                    return "Ingrese un número telefónico";
-                  if (!RegExp(r'^[0-9]+$').hasMatch(v))
-                    return "Solo números permitidos";
-                  if (v.length < 8) return "Número demasiado corto";
-                  return null;
-                },
-                onSaved: (v) => _phone = v,
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                obscureText: true,
-                decoration: const InputDecoration(labelText: "Contraseña"),
-                validator: (v) => v!.length < 6 ? "Mínimo 6 caracteres" : null,
-                onSaved: (v) => _password = v,
-              ),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Registrarse"),
+                Text(
+                  tRegisterSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ),
 
-              TextButton(
-                onPressed: () => Navigator.pushNamed(context, "/login"),
-                child: const Text("¿Ya tienes cuenta? Inicia sesión"),
-              ),
-            ],
+                // Formulario de registro
+                Form(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Campos de entrada de texto
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            label: Text(tName),
+                            prefixIcon: Icon(Icons.person_outline_rounded),
+                          ),
+                          autofocus: true,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+
+                        SizedBox(height: tFormHeight - 20.0),
+
+                        TextFormField(
+                          controller: emailController,
+                          decoration: const InputDecoration(
+                            label: Text(tEmail),
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+
+                        SizedBox(height: tFormHeight - 20.0),
+
+                        TextFormField(
+                          controller: phoneController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            label: Text(tPhone),
+                            prefixIcon: Icon(Icons.phone),
+                          ),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+
+                        SizedBox(height: tFormHeight - 20.0),
+
+                        TextFormField(
+                          controller: passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            label: Text(tPassword),
+                            prefixIcon: Icon(Icons.fingerprint),
+                            // suffixIcon: IconButton(
+                            //   icon: Icon(Icons.remove_red_eye_sharp),
+                            //   onPressed: () {},
+                            // ),
+                          ),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+
+                        const SizedBox(height: tFormHeight),
+
+                        // Botones de registro
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _registerWithEmail(),
+                            child: Text(tRegister.toUpperCase()),
+                          ),
+                        ),
+
+                        const SizedBox(height: tFormHeight - 20.0),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(thickness: 1, endIndent: 10),
+                                ),
+                                Text(
+                                  'O continúa con',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                Expanded(
+                                  child: Divider(thickness: 1, indent: 10),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: tFormHeight - 20.0),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: Image(
+                                  image: AssetImage(tGoogleLogoImage),
+                                  width: 20.0,
+                                ),
+                                onPressed: () => _registerWithGoogle(),
+                                label: Text(tSignInWithGoogle),
+                              ),
+                            ),
+                            const SizedBox(height: tFormHeight - 20.0),
+
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, "/login"),
+                              child: Text.rich(
+                                TextSpan(
+                                  text: tAlredyHaveAnAccount,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  children: [
+                                    TextSpan(
+                                      text: tLogin.toUpperCase(),
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _registerWithEmail() async {
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
+    final password = passwordController.text.trim();
+
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    final phoneRegex = RegExp(r'^[0-9]+$');
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      AppSnackBar.showError(context, "Por favor, completa todos los campos");
+      return;
+    }
+
+    if (!emailRegex.hasMatch(email)) {
+      AppSnackBar.showError(context, "Ingresa un correo válido");
+      return;
+    }
+
+    if (!phoneRegex.hasMatch(phone)) {
+      AppSnackBar.showError(context, "Ingresa un número de teléfono válido");
+      return;
+    }
+
+    if (password.length < 6) {
+      AppSnackBar.showError(
+        context,
+        "La contraseña debe tener al menos 6 caracteres",
+      );
+      return;
+    }
+
+    try {
+      final user = await _controller.registerWithEmail(
+        name,
+        email,
+        phone,
+        password,
+      );
+      if (user != null) {
+        AppSnackBar.showSuccess(context, "Registro exitoso");
+      }
+      Navigator.pushNamed(context, "/home");
+    } catch (e) {
+      AppSnackBar.showError(context, "Ha ocurrido un error: $e");
+    }
+  }
+
+  Future<void> _registerWithGoogle() async {
+    try {
+      final user = await _controller.loginWithGoogle();
+      if (user != null) {
+        AppSnackBar.showSuccess(context, "Inicio de sesión con Google exitoso");
+
+        Navigator.pushNamed(context, "/home");
+      }
+    } catch (e) {
+      AppSnackBar.showError(context, "Ha ocurrido un error: $e");
+    }
   }
 }

@@ -3,7 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_expense_tracker_ocr/app.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/colors.dart';
+import 'package:flutter_expense_tracker_ocr/core/utils/theme/snackbar_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -186,14 +189,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Perfil",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -208,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ? FileImage(_imageFile!)
                         : (_photoUrl != null && _photoUrl!.isNotEmpty)
                         ? NetworkImage(_photoUrl!)
-                        : const AssetImage('assets/avatar_placeholder.png')
+                        : const AssetImage('assets/images/icons/avatar.png')
                               as ImageProvider,
                   ),
                   Positioned(
@@ -251,7 +249,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 initialValue: _name ?? '',
                 decoration: const InputDecoration(
                   labelText: 'Nombre',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
                 onSaved: (value) => _name = value?.trim(),
                 validator: (value) => value == null || value.trim().isEmpty
@@ -263,11 +264,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               TextFormField(
                 initialValue: _phone ?? '',
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   labelText: 'Teléfono',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
                 ),
-                keyboardType: TextInputType.phone,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
                 onSaved: (value) => _phone = value?.trim(),
               ),
 
@@ -278,7 +283,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 enabled: false,
                 decoration: const InputDecoration(
                   labelText: 'Correo',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
 
@@ -305,43 +313,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
+                  label: Text(
                     "Cerrar sesión",
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(
+                      color: isDarkMode ? tWhiteColor : tSecondaryColor,
+                    ),
                   ),
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
 
                     if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.green.shade600,
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.all(12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        content: Row(
-                          children: const [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 12),
-                            Text(
-                              "Sesión cerrada con éxito",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
+                    AppSnackBar.showSuccess(
+                      context,
+                      "Sesión cerrada con éxito",
                     );
 
                     await Future.delayed(const Duration(milliseconds: 900));
 
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const MyApp(),
-                      ),
+                      MaterialPageRoute(builder: (context) => const MyApp()),
                       (route) => false,
                     );
                   },

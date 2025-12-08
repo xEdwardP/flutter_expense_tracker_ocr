@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/controllers/transaction_list_controller.dart';
 import 'package:intl/intl.dart';
-import '../../controllers/transaction_list_controller.dart';
 import 'transaction_detail_page.dart';
 
 class TransactionsList extends StatefulWidget {
@@ -21,43 +21,74 @@ class _TransactionsListState extends State<TransactionsList> {
   }
 
   Future<void> confirmDelete(String id) async {
-  return showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      icon: const Icon(
-        Icons.warning_amber_rounded,
-        color: Colors.red,
-        size: 48,
-      ),
-      title: const Text("Confirmar eliminación"),
-      content: const Text(
-        "¿Seguro que deseas eliminar esta transacción?"
-        " Esta acción no se puede deshacer."
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancelar"),
+    return showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(
+          Icons.warning_amber_rounded,
+          color: Colors.red,
+          size: 48,
         ),
-        ElevatedButton(
-          onPressed: () async {
-            Navigator.pop(context);
-            await controller.deleteTransaction(id);
-            await controller.fetchInitial();
-            setState(() {});
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: const Text("Eliminar"),
-        )
-      ],
-    ),
-  );
-}
+        title: const Text(
+          "Confirmar eliminación",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        content: const Text(
+          "¿Seguro que deseas eliminar esta transacción?\n"
+          "Esta acción no se puede deshacer.",
+          style: TextStyle(fontSize: 14),
+          textAlign: TextAlign.center,
+        ),
+        actionsPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancelar"),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await controller.deleteTransaction(id);
+                    await controller.fetchInitial();
+                    setState(() {});
+                  },
+                  child: const Text("Eliminar"),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Transacciones")),
       body: Column(
         children: [
           Expanded(child: buildList()),
@@ -86,49 +117,58 @@ class _TransactionsListState extends State<TransactionsList> {
         }
 
         final double amount = (data["amount"] ?? 0).toDouble();
-
         final String type = data["type"] ?? "income";
+        final Color amountColor = type == "expense" ? Colors.red : Colors.green;
 
-        final Color amountColor =
-            type == "expense" ? Colors.red : Colors.green;
-
-        return ListTile(
-          title: Text(
-            "L. ${amount.toStringAsFixed(2)}",
-            style: TextStyle(
-              color: amountColor,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          subtitle: Text(DateFormat("dd/MM/yyyy HH:mm").format(date)),
-
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Botón Detalles
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TransactionDetailPage(
-                        transaction: data,
+          elevation: 3,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: amountColor.withOpacity(0.1),
+              child: Icon(
+                type == "expense" ? Icons.arrow_downward : Icons.arrow_upward,
+                color: amountColor,
+              ),
+            ),
+            title: Text(
+              "L. ${amount.toStringAsFixed(2)}",
+              style: TextStyle(
+                color: amountColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              DateFormat("dd/MM/yyyy HH:mm").format(date),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            trailing: Wrap(
+              spacing: 8,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.info_outline, color: Colors.blue),
+                  tooltip: "Detalles",
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            TransactionDetailPage(transaction: data),
                       ),
-                    ),
-                  );
-                },
-                child: const Text("Detalles"),
-              ),
-              const SizedBox(width: 10),
-
-              // Botón Eliminar
-              ElevatedButton(
-                onPressed: () => confirmDelete(doc.id),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text("Eliminar"),
-              ),
-            ],
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  tooltip: "Eliminar",
+                  onPressed: () => confirmDelete(doc.id),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -141,31 +181,46 @@ class _TransactionsListState extends State<TransactionsList> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
+          ElevatedButton.icon(
+            icon: const Icon(Icons.arrow_back),
+            label: const Text("Anterior"),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
             onPressed: controller.hasMorePrev && !controller.isLoading
                 ? () async {
                     await controller.fetchPrevious();
                     setState(() {});
                   }
                 : null,
-            child: const Text("Anterior"),
           ),
           const SizedBox(width: 20),
-          Text("Página ${controller.currentPage}",
-              style: const TextStyle(fontSize: 16)),
+          Text(
+            "Página ${controller.currentPage}",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(width: 20),
-          ElevatedButton(
+          ElevatedButton.icon(
+            icon: const Icon(Icons.arrow_forward),
+            label: const Text("Siguiente"),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
             onPressed: controller.hasMoreNext && !controller.isLoading
                 ? () async {
                     await controller.fetchNext();
                     setState(() {});
                   }
                 : null,
-            child: const Text("Siguiente"),
           ),
         ],
       ),
     );
   }
 }
-

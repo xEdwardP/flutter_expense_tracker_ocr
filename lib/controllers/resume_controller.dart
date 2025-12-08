@@ -14,7 +14,7 @@ class ResumeController {
 
     return FirebaseFirestore.instance
         .collection('transactions')
-        .where('userId', isEqualTo: user.uid) // filtramos por usuario
+        .where('userId', isEqualTo: user.uid)
         .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
         .where('date', isLessThanOrEqualTo: end.toIso8601String())
         .orderBy('date', descending: true)
@@ -51,9 +51,14 @@ class ResumeController {
         .fold(0, (s, t) => s + t.amount);
   }
 
-  List<TransactionModel> getLastNotes(List<TransactionModel> transactions, {int limit = 5}) {
-    final withNotes = transactions.where((t) => t.note != null && t.note!.isNotEmpty).toList();
-    withNotes.sort((a, b) => b.date.compareTo(a.date)); 
+  List<TransactionModel> getLastNotes(
+    List<TransactionModel> transactions, {
+    int limit = 5,
+  }) {
+    final withNotes = transactions
+        .where((t) => t.note != null && t.note!.isNotEmpty)
+        .toList();
+    withNotes.sort((a, b) => b.date.compareTo(a.date));
     return withNotes.take(limit).toList();
   }
 }

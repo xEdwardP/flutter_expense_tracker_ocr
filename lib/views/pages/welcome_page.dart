@@ -9,7 +9,6 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tamaño responsivo para la imagen
     var mediaQuery = MediaQuery.of(context);
     var heightImage = mediaQuery.size.height;
     var brightness = mediaQuery.platformBrightness;

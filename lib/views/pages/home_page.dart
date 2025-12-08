@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/colors.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/text_strings.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/add_transaction_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/profile_page.dart';
 import 'package:flutter_expense_tracker_ocr/views/pages/resume_page.dart';
@@ -30,13 +32,22 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text(tAppName),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: tSecondaryColor,
+        foregroundColor: tPrimaryColor,
+        automaticallyImplyLeading: false,
+      ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
+        backgroundColor: tSecondaryColor,
+        selectedItemColor: tPrimaryColor,
+        unselectedItemColor: tWhiteColor,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
           BottomNavigationBarItem(
