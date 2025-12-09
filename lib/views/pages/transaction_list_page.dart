@@ -25,21 +25,26 @@ class _TransactionsListState extends State<TransactionsList> {
     return showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: tWhiteColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: const Icon(
           Icons.warning_amber_rounded,
           color: Colors.red,
           size: 48,
         ),
-        title: const Text(
+        title: Text(
           "Confirmar eliminación",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: tDarkColor,
+          ),
           textAlign: TextAlign.center,
         ),
-        content: const Text(
+        content: Text(
           "¿Seguro que deseas eliminar esta transacción?\n"
           "Esta acción no se puede deshacer.",
-          style: TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: 14, color: tDarkColor),
           textAlign: TextAlign.center,
         ),
         actionsPadding: const EdgeInsets.symmetric(
@@ -52,13 +57,14 @@ class _TransactionsListState extends State<TransactionsList> {
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.grey[500],
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancelar"),
+                  child: Text("Cancelar", style: TextStyle(color: tWhiteColor)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -77,7 +83,7 @@ class _TransactionsListState extends State<TransactionsList> {
                     await controller.fetchInitial();
                     setState(() {});
                   },
-                  child: const Text("Eliminar"),
+                  child: Text("Eliminar", style: TextStyle(color: tWhiteColor)),
                 ),
               ),
             ],

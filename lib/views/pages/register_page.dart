@@ -221,6 +221,12 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    if (await _controller.checkIfUserExists(email)) {
+      AppSnackBar.showError(context, "El correo ya está registrado");
+      return;
+    }
+    ;
+
     try {
       final user = await _controller.registerWithEmail(
         name,
