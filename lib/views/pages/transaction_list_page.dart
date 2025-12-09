@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/transaction_list_controller.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/colors.dart';
 import 'package:intl/intl.dart';
 import 'transaction_detail_page.dart';
 
@@ -176,6 +177,7 @@ class _TransactionsListState extends State<TransactionsList> {
   }
 
   Widget buildPagination() {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -183,7 +185,10 @@ class _TransactionsListState extends State<TransactionsList> {
         children: [
           ElevatedButton.icon(
             icon: const Icon(Icons.arrow_back),
-            label: const Text("Anterior"),
+            label: Text(
+              "Anterior",
+              style: TextStyle(color: isDarkMode ? tWhiteColor : tDarkColor),
+            ),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -200,12 +205,19 @@ class _TransactionsListState extends State<TransactionsList> {
           const SizedBox(width: 20),
           Text(
             "Página ${controller.currentPage}",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDarkMode ? tWhiteColor : tDarkColor,
+            ),
           ),
           const SizedBox(width: 20),
           ElevatedButton.icon(
             icon: const Icon(Icons.arrow_forward),
-            label: const Text("Siguiente"),
+            label: Text(
+              "Siguiente",
+              style: TextStyle(color: isDarkMode ? tWhiteColor : tDarkColor),
+            ),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

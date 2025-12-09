@@ -11,6 +11,7 @@ class ResumePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: StreamBuilder<List<TransactionModel>>(
         stream: controller.getTransactionsStream(),
@@ -55,9 +56,13 @@ class ResumePage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 30),
-                const Text(
+                Text(
                   "Transacciones recientes",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? tWhiteColor : tDarkColor,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 ...transactions.take(5).map((t) => _buildTransactionItem(t)),
