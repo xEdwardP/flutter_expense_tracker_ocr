@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_expense_tracker_ocr/data/firebase_config.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthController {
@@ -15,7 +16,9 @@ class AuthController {
   }
 
   Future<User?> loginWithGoogle() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+    final webClientId = webClientToken;
+
+    final GoogleSignIn googleSignIn = GoogleSignIn(clientId: webClientId);
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
     if (googleUser == null) return null;
@@ -72,6 +75,19 @@ class AuthController {
       }
     } catch (e) {
       return "Error inesperado: $e";
+    }
+  }
+
+  Future<bool> checkIfUserExists(String email) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection("users")
+          .where("email", isEqualTo: email)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      return false;
     }
   }
 }

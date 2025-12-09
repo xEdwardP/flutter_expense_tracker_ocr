@@ -15,7 +15,7 @@ class TransactionDetailPage extends StatelessWidget {
     final date = transaction['date'];
     final type = transaction['type'];
     final note = transaction['note'] ?? "Sin nota";
-    final imageUrl = transaction['imageUrl'];
+    final imageUrl = transaction['ticketPhotoUrl'];
 
     DateTime parsedDate;
 
@@ -130,12 +130,17 @@ class TransactionDetailPage extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  imageUrl,
+                  transaction['ticketPhotoUrl'],
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: 220,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Text("No se pudo cargar la imagen");
+                    return Text(
+                      "No se pudo cargar la imagen",
+                      style: TextStyle(
+                        color: isDarkMode ? tWhiteColor : tSecondaryColor,
+                      ),
+                    );
                   },
                 ),
               ),
