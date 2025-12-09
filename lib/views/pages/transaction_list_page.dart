@@ -106,8 +106,13 @@ class _TransactionsListState extends State<TransactionsList> {
   }
 
   Widget buildList() {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     if (controller.isLoading && controller.transactions.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          color: isDarkMode ? tWhiteColor : tDarkColor,
+        ),
+      );
     }
 
     return ListView.builder(

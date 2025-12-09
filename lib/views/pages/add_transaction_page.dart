@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_expense_tracker_ocr/controllers/transaction_controller.dart';
+import 'package:flutter_expense_tracker_ocr/core/constants/colors.dart';
 import 'package:flutter_expense_tracker_ocr/core/utils/theme/snackbar_utils.dart';
 import 'transaction_detail_page.dart';
 
@@ -211,13 +212,21 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               ),
             ),
             const SizedBox(height: 20),
-            if (loadingOCR) const CircularProgressIndicator(),
+            if (loadingOCR)
+              CircularProgressIndicator(
+                color: isDarkMode ? tWhiteColor : Colors.blue,
+              ),
             if (uploading)
               Column(
-                children: const [
+                children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 10),
-                  Text("Subiendo y guardando..."),
+                  Text(
+                    "Subiendo y guardando...",
+                    style: TextStyle(
+                      color: isDarkMode ? tWhiteColor : tSecondaryColor,
+                    ),
+                  ),
                 ],
               ),
             const SizedBox(height: 20),
